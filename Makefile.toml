@@ -1,0 +1,14 @@
+[tasks.build-frontend]
+dependencies = [{ path = "frontend", name = "build" }]
+
+[tasks.build-backend]
+dependencies = [{ path = "backend", name = "build" }]
+
+[tasks.build]
+dependencies = ["build-frontend", "build-backend"]
+
+[tasks.run]
+dependencies = [{ path = "backend", name = "run" }]
+
+[config]
+default_to_workspace = false

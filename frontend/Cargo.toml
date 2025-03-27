@@ -1,0 +1,11 @@
+[package]
+name = "connectia-frontend"
+version = "0.0.0"
+edition = "2024"
+
+[dependencies]
+wasm-logger = "0.2.0"
+yew = { version = "0.21.0", features = ["csr"] }
+yew-autoprops = "0.4.1"
+yew-router = "0.18.0"
+
