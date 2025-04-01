@@ -6,10 +6,21 @@
     <link href="/static/styles/app.css" rel="stylesheet" />
 
     <title>ConnectIA</title>
-</head>
+<link rel="modulepreload" href="/static/frontend/connectia-frontend.js" crossorigin="anonymous" integrity="sha384-T078YcUi5tWsNKYR1TAkhggO5N1OGQnlvoEPwqQpGxQ6AklYVcKN4ZMvVgGXL/fg"><link rel="preload" href="/static/frontend/connectia-frontend_bg.wasm" crossorigin="anonymous" integrity="sha384-YpppxjF+LB4YgTLkzKEI0o2N0CE9Iygh4dnTy9vyuU8lX1BpXG6jLwMo2VXP/MQr" as="fetch" type="application/wasm"></head>
 
-<body class="bg-indigo-200">
+<body class="bg-amber-100 pt-4 px-6">
     <h1 class="font-title">Loading...</h1>
-</body>
+
+<script type="module">
+import init, * as bindings from '/static/frontend/connectia-frontend.js';
+const wasm = await init({ module_or_path: '/static/frontend/connectia-frontend_bg.wasm' });
+
+
+window.wasmBindings = bindings;
+
+
+dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
+
+</script></body>
 
 </html>

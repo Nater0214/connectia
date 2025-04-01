@@ -3,3 +3,6 @@ target
 
 # Ignore vscode directory
 .vscode
+
+# Ignore compiled static frontend
+static/frontend

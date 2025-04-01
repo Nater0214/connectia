@@ -1,5 +1,4 @@
 [build]
-target = "./html/index.html"
 locked = false
 dist = "../static/frontend"
 filehash = false
