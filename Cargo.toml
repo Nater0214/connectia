@@ -5,7 +5,3 @@ members = [
     "frontend"
 ]
 default-members = ["backend"]
-
-[package]
-name = "connectia"
-license = "MIT OR Apache-2.0"
