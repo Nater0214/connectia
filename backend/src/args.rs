@@ -14,6 +14,9 @@ pub struct ProgramArgs {
     #[arg(short, long)]
     pub static_dir: Option<PathBuf>,
 
+    /// The url to the database
+    pub database_url: Option<String>,
+
     /// The logging verbosity
     #[arg(short, long)]
     pub verbosity: Option<String>,

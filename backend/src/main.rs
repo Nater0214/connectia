@@ -88,6 +88,21 @@ async fn main() {
         }
     };
 
+    // Get the database url from the command like arguments
+    let database_url = match program_args.database_url {
+        Some(url) => {
+            event!(Level::INFO, "Setting database URL to {}", url);
+            url
+        }
+        None => {
+            event!(
+                Level::INFO,
+                "No database URL provided, defaulting to sqlite://:memory:"
+            );
+            "sqlite://:memory:".to_string()
+        }
+    };
+
     // Create the root state
     let root_state = states::RootState::new(&static_dir);
 
