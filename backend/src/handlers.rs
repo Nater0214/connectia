@@ -52,7 +52,11 @@ pub async fn get_index(State(state): State<RootState>) -> Result<impl IntoRespon
 pub mod api {
     use super::*;
 
-    pub async fn get_ping(State(state): State<ApiState>) -> Result<impl IntoResponse, ErrorResponse> {
-        Ok("Pong".into_response())
+    pub async fn get_ping(State(_state): State<ApiState>) -> impl IntoResponse {
+        "Pong".into_response()
+    }
+
+    pub async fn get_404(State(_state): State<ApiState>) -> impl IntoResponse {
+        (http::StatusCode::NOT_FOUND, "Not Found").into_response()
     }
 }

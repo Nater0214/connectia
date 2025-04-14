@@ -1,7 +1,6 @@
 use args::ProgramArgs;
 use axum::{Router, routing::get};
 use clap::Parser;
-use handlers::{api, get_index};
 use sea_orm::Database;
 use tokio::net;
 use tower_http::{
@@ -119,6 +118,7 @@ async fn main() {
     // Create the api router
     let api_router = Router::new()
         .route("/ping", get(handlers::api::get_ping))
+        .fallback(get(handlers::api::get_404))
         .with_state(api_state);
 
     // Create the root state
@@ -130,7 +130,7 @@ async fn main() {
     // Create the root router
     let root_router = Router::new()
         .route("/", get(handlers::get_index))
-        .fallback(get_index)
+        .fallback(get(handlers::get_index))
         .nest_service("/static", ServeDir::new(&static_dir))
         .nest("/api", api_router)
         .layer(
