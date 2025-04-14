@@ -5,7 +5,7 @@ use axum::{
 };
 use tokio::{fs, io};
 
-use crate::states::RootState;
+use crate::states::{ApiState, RootState};
 
 /// A response error
 #[derive(Debug)]
@@ -47,4 +47,12 @@ pub async fn get_index(State(state): State<RootState>) -> Result<impl IntoRespon
         .await
         .map(|content| Html(content).into_response())
         .map_err(|err| ErrorResponse::IoError(err))
+}
+
+pub mod api {
+    use super::*;
+
+    pub async fn get_ping(State(state): State<ApiState>) -> Result<impl IntoResponse, ErrorResponse> {
+        Ok("Pong".into_response())
+    }
 }

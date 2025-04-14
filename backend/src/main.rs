@@ -1,7 +1,8 @@
 use args::ProgramArgs;
 use axum::{Router, routing::get};
 use clap::Parser;
-use handlers::get_index;
+use handlers::{api, get_index};
+use sea_orm::Database;
 use tokio::net;
 use tower_http::{
     LatencyUnit,
@@ -12,6 +13,7 @@ use tracing::{Level, event, level_filters::LevelFilter};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt as _};
 
 mod args;
+mod db;
 mod handlers;
 mod states;
 
@@ -97,20 +99,40 @@ async fn main() {
         None => {
             event!(
                 Level::INFO,
-                "No database URL provided, defaulting to sqlite://:memory:"
+                "No database URL provided, defaulting to sqlite::memory:"
             );
-            "sqlite://:memory:".to_string()
+            "sqlite::memory:".to_string()
         }
     };
 
+    // Create the api state
+    let api_state = states::ApiState {
+        db_connection: match Database::connect(database_url).await {
+            Ok(connection) => connection,
+            Err(err) => {
+                event!(Level::ERROR, "Failed to connect to the database: {}", err);
+                panic!("Failed to connect to the database: {}", err)
+            }
+        },
+    };
+
+    // Create the api router
+    let api_router = Router::new()
+        .route("/ping", get(handlers::api::get_ping))
+        .with_state(api_state);
+
     // Create the root state
-    let root_state = states::RootState::new(&static_dir);
+    let root_state = states::RootState {
+        static_dir: static_dir.clone(),
+        ..states::RootState::default()
+    };
 
     // Create the root router
     let root_router = Router::new()
         .route("/", get(handlers::get_index))
         .fallback(get_index)
         .nest_service("/static", ServeDir::new(&static_dir))
+        .nest("/api", api_router)
         .layer(
             TraceLayer::new_for_http()
                 .on_request(DefaultOnRequest::new().level(Level::INFO))
