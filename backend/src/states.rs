@@ -8,6 +8,6 @@ pub struct RootState {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct ApiState {
+pub struct BackendState {
     pub db_connection: DatabaseConnection,
 }

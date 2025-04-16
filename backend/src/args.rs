@@ -7,14 +7,15 @@ use clap::Parser;
 #[command()]
 pub struct ProgramArgs {
     /// The port to serve on
-    #[arg(short, long)]
+    #[arg(long)]
     pub port: Option<u16>,
 
     /// The directory to serve static files from
-    #[arg(short, long)]
+    #[arg(long)]
     pub static_dir: Option<PathBuf>,
 
     /// The url to the database
+    #[arg(long)]
     pub database_url: Option<String>,
 
     /// The logging verbosity

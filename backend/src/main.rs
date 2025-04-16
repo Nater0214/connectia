@@ -1,17 +1,29 @@
+use std::time;
+
 use args::ProgramArgs;
-use axum::{Router, routing::get};
+use axum::{
+    Router, ServiceExt,
+    extract::Request,
+    routing::{get, post},
+};
+use axum_login::AuthManagerLayerBuilder;
 use clap::Parser;
+use handlers::backend::post_login;
 use sea_orm::Database;
 use tokio::net;
+use tower::Layer;
 use tower_http::{
     LatencyUnit,
+    normalize_path::NormalizePathLayer,
     services::ServeDir,
     trace::{DefaultOnFailure, DefaultOnRequest, DefaultOnResponse, TraceLayer},
 };
+use tower_sessions::{MemoryStore, SessionManagerLayer, cookie::time::Duration};
 use tracing::{Level, event, level_filters::LevelFilter};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt as _};
 
 mod args;
+mod auth;
 mod db;
 mod handlers;
 mod states;
@@ -104,22 +116,30 @@ async fn main() {
         }
     };
 
-    // Create the api state
-    let api_state = states::ApiState {
-        db_connection: match Database::connect(database_url).await {
-            Ok(connection) => connection,
-            Err(err) => {
-                event!(Level::ERROR, "Failed to connect to the database: {}", err);
-                panic!("Failed to connect to the database: {}", err)
-            }
-        },
+    // Create a database connection
+    let database_connection = Database::connect(&database_url).await.unwrap();
+
+    // Create the session store and layer
+    let session_store = MemoryStore::default();
+    let session_layer = SessionManagerLayer::new(session_store)
+        .with_expiry(tower_sessions::Expiry::OnInactivity(Duration::days(1)));
+
+    // Create the auth backend and layer
+    let auth_backend = auth::Backend::new(database_connection.clone());
+    let auth_layer = AuthManagerLayerBuilder::new(auth_backend, session_layer).build();
+
+    // Create the backend state
+    let backend_state = states::BackendState {
+        db_connection: database_connection.clone(),
     };
 
-    // Create the api router
-    let api_router = Router::new()
-        .route("/ping", get(handlers::api::get_ping))
-        .fallback(get(handlers::api::get_404))
-        .with_state(api_state);
+    // Create the backend router
+    let backend_router = Router::new()
+        .layer(auth_layer)
+        .route("/ping", get(handlers::backend::get_ping))
+        .route("/login", post(handlers::backend::post_login))
+        .fallback(get(handlers::backend::get_404))
+        .with_state(backend_state);
 
     // Create the root state
     let root_state = states::RootState {
@@ -130,9 +150,9 @@ async fn main() {
     // Create the root router
     let root_router = Router::new()
         .route("/", get(handlers::get_index))
-        .fallback(get(handlers::get_index))
         .nest_service("/static", ServeDir::new(&static_dir))
-        .nest("/api", api_router)
+        .nest("/backend", backend_router)
+        .fallback(get(handlers::get_index))
         .layer(
             TraceLayer::new_for_http()
                 .on_request(DefaultOnRequest::new().level(Level::INFO))
@@ -144,6 +164,9 @@ async fn main() {
                 ),
         )
         .with_state(root_state);
+
+    // Create the app
+    let app = NormalizePathLayer::trim_trailing_slash().layer(root_router);
 
     // Create the listener
     let listener = match net::TcpListener::bind(format!("0.0.0.0:{}", port)).await {
@@ -158,7 +181,7 @@ async fn main() {
     };
 
     // Serve the root router
-    match axum::serve(listener, root_router).await {
+    match axum::serve(listener, ServiceExt::<Request>::into_make_service(app)).await {
         Ok(_) => event!(Level::INFO, "Finished serving on port {}", port),
         Err(err) => event!(Level::ERROR, "Failed to serve: {}", err),
     };

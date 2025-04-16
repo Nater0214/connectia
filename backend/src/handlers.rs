@@ -5,7 +5,7 @@ use axum::{
 };
 use tokio::{fs, io};
 
-use crate::states::{ApiState, RootState};
+use crate::states::{BackendState, RootState};
 
 /// A response error
 #[derive(Debug)]
@@ -49,14 +49,18 @@ pub async fn get_index(State(state): State<RootState>) -> Result<impl IntoRespon
         .map_err(|err| ErrorResponse::IoError(err))
 }
 
-pub mod api {
+pub mod backend {
     use super::*;
 
-    pub async fn get_ping(State(_state): State<ApiState>) -> impl IntoResponse {
+    pub async fn get_ping(State(_state): State<BackendState>) -> impl IntoResponse {
         "Pong".into_response()
     }
 
-    pub async fn get_404(State(_state): State<ApiState>) -> impl IntoResponse {
+    pub async fn post_login(State(_state): State<BackendState>) -> impl IntoResponse {
+        "Login".into_response()
+    }
+
+    pub async fn get_404(State(_state): State<BackendState>) -> impl IntoResponse {
         (http::StatusCode::NOT_FOUND, "Not Found").into_response()
     }
 }

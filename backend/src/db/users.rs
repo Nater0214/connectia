@@ -8,9 +8,8 @@ use sea_orm::{
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
-    pub user_name: String,
-    pub password_hash: Vec<u8>,
-    pub password_salt: Vec<u8>,
+    pub username: String,
+    pub password_hash: String,
 }
 
 #[derive(Debug, Clone, Copy, EnumIter, DeriveRelation)]
