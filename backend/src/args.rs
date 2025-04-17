@@ -18,6 +18,10 @@ pub struct ProgramArgs {
     #[arg(long)]
     pub database_url: Option<String>,
 
+    /// Create a super user with a given name and password separated by a colon
+    #[arg(long)]
+    pub create_super_user: Option<String>,
+
     /// The logging verbosity
     #[arg(short, long)]
     pub verbosity: Option<String>,

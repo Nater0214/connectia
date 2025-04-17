@@ -47,7 +47,7 @@ fn LoginForm() -> Html {
     let username_state = use_state(String::new);
     let password_state = use_state(String::new);
     let error_state = use_state(|| None::<String>);
-    let (_store, dispatch) = use_store::<State>();
+    let (store, dispatch) = use_store::<State>();
 
     // Create the username input callback
     let handle_username_input = {
@@ -155,14 +155,51 @@ fn LoginForm() -> Html {
     };
 
     html! {
-        <form onsubmit={ on_submit }>
-            <label for="username">{ "Username:" }</label>
-            <input id="username" class={ classes!("w-full", "mb-5", "px-3", "py-2", "rounded", "border-3", "border-gray-300", "bg-amber-200") } type="text" value={ (*username_state).clone() } oninput={ handle_username_input } />
-            <br />
-            <label for="password">{ "Password:" }</label>
-            <input id="password" class={ classes!("w-full", "mb-5", "px-3", "py-2", "rounded", "border-3", "border-gray-300", "bg-amber-200") } type="password" value={ (*password_state).clone() } oninput={ handle_password_input } />
-            <input type="submit" value="Login" class={ classes!("mb-5", "px-3", "py-2", "rounded", "border-3", "border-gray-300", "bg-amber-200") } />
-            <p class={ classes!("text-red-500") }>{ (*error_state).clone() }</p>
+        <form onsubmit={ on_submit } novalidate=true>
+            <div class={ classes!("mb-5") }>
+                <label for="username">{ "Username:" }</label>
+                <input
+                    id="username"
+                    class={ classes!("w-full", "mb-5", "px-3", "py-2", "rounded", "border-3", "border-gray-300", "bg-amber-200") }
+                    type="text" value={ (*username_state).clone() }
+                    oninput={ handle_username_input }
+                    disabled={ (*store).current_user.is_some() }
+                />
+            </div>
+            <div class={ classes!("mb-5") }>
+                <label for="password">{ "Password:" }</label>
+                <input
+                    id="password"
+                    class={ classes!("w-full", "mb-5", "px-3", "py-2", "rounded", "border-3", "border-gray-300", "bg-amber-200") }
+                    type="password" value={ (*password_state).clone() }
+                    oninput={ handle_password_input }
+                    disabled={ (*store).current_user.is_some() }
+                />
+            </div>
+            {
+                if let Some(error) = &*error_state {
+                    html! {
+                        <p class={ classes!("text-red-500") }>{ error }</p>
+                    }
+                } else {
+                    html! {}
+                }
+            }
+            {
+                if let Some(user) = &(*store).current_user {
+                    html! {
+                        <p class={ classes!("text-green-500") }>{ format!("Welcome, {}!", user.username) }</p>
+                    }
+                } else {
+                    html! {}
+                }
+            }
+            <input
+                type="submit"
+                value="Login"
+                class={ classes!("mb-5", "px-3", "py-2", "rounded", "border-3", "border-gray-300", "bg-amber-200", "active:bg-amber-300", "cursor-pointer") }
+                disabled={ (*store).current_user.is_some() }
+            />
         </form>
     }
 }
@@ -182,7 +219,7 @@ fn ErrorPage(
 }
 
 #[function_component]
-fn HomePage() -> Html {
+fn LandingPage() -> Html {
     html! {
         <Title>{ "Home" }</Title>
     }
@@ -201,7 +238,7 @@ fn LoginPage() -> Html {
 #[derive(Debug, Clone, Routable, PartialEq)]
 enum Route {
     #[at("/")]
-    Home,
+    Landing,
     #[at("/login")]
     Login,
     #[not_found]
@@ -211,8 +248,8 @@ enum Route {
 
 fn switch(route: Route) -> Html {
     match route {
-        Route::Home => html! {
-            <HomePage />
+        Route::Landing => html! {
+            <LandingPage />
         },
         Route::Login => html! {
             <LoginPage />

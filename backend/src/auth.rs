@@ -75,25 +75,29 @@ impl Backend {
     }
 
     /// Create a user with a password
-    pub async fn create_user(&self, username: String, password: SecretString) -> Result<(), Error> {
+    pub async fn create_user(&self, username: impl AsRef<str>, password: impl AsRef<str>) -> Result<(), Error> {
+        // Convert args to &str
+        let username = username.as_ref();
+        let password = password.as_ref();
+
         // Hash the password
         let password_hash = Argon2::default()
             .hash_password(
-                password.expose_secret().as_bytes(),
+                password.as_bytes(),
                 &SaltString::generate(&mut OsRng),
             )?
             .to_string();
 
         // Try to get an existing user
         let user_entity = db::users::Entity::find()
-            .filter(db::users::Column::Username.eq(&username))
+            .filter(db::users::Column::Username.eq(username))
             .one(&self.db)
             .await?;
 
         // If the user does not exist then add them
         if user_entity.is_none() {
             db::users::Entity::insert(db::users::ActiveModel {
-                username: Set(username),
+                username: Set(username.to_string()),
                 password_hash: Set(password_hash),
                 ..Default::default()
             })
