@@ -12,6 +12,7 @@ axum-reverse-proxy = "0.8.0"
 clap = { version = "4.5.34", features = ["derive"] }
 reqwest = "0.12.15"
 sea-orm = { version = "1.1.8", features = ["macros", "runtime-tokio-rustls", "sqlx-mysql", "sqlx-postgres", "sqlx-sqlite"] }
+sea-orm-migration = { version = "1.1.10", features = ["runtime-tokio-rustls", "sqlx-mysql", "sqlx-postgres", "sqlx-sqlite"] }
 secrecy = { version = "0.10.3", features = ["serde"] }
 serde = "1.0.219"
 tokio = { version = "1.44.2", features = ["macros", "net", "rt-multi-thread"] }

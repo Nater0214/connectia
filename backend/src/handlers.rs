@@ -5,7 +5,7 @@ use axum::{
 };
 use tokio::{fs, io};
 
-use crate::states::{BackendState, RootState};
+use crate::states::RootState;
 
 /// A response error
 #[derive(Debug)]
@@ -50,17 +50,40 @@ pub async fn get_index(State(state): State<RootState>) -> Result<impl IntoRespon
 }
 
 pub mod backend {
+    use axum::Json;
+    use axum_login::AuthSession;
+
+    use crate::{auth, response_bodies};
+
     use super::*;
 
-    pub async fn get_ping(State(_state): State<BackendState>) -> impl IntoResponse {
+    pub async fn get_ping() -> impl IntoResponse {
         "Pong".into_response()
     }
 
-    pub async fn post_login(State(_state): State<BackendState>) -> impl IntoResponse {
-        "Login".into_response()
+    pub async fn post_login(
+        mut auth_session: AuthSession<auth::Backend>,
+        Json(credentials): Json<auth::Credentials>,
+    ) -> impl IntoResponse {
+        match auth_session.authenticate(credentials).await {
+            Ok(Some(user)) => match auth_session.login(&user).await {
+                Ok(_) => (
+                    http::StatusCode::OK,
+                    Json(response_bodies::LoginResponse {
+                        username: user.username,
+                    }),
+                ).into_response(),
+                Err(err) => (
+                    http::StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("{}", err),
+                ).into_response()
+            },
+            Ok(None) => (http::StatusCode::UNAUTHORIZED, "Unauthorized").into_response(),
+            Err(err) => (http::StatusCode::INTERNAL_SERVER_ERROR, format!("{}", err)).into_response(),
+        }
     }
 
-    pub async fn get_404(State(_state): State<BackendState>) -> impl IntoResponse {
+    pub async fn get_404() -> impl IntoResponse {
         (http::StatusCode::NOT_FOUND, "Not Found").into_response()
     }
 }

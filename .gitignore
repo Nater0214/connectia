@@ -3,6 +3,10 @@ target
 
 # Ignore vscode directory
 .vscode
+.VSCodeCounter
 
 # Ignore compiled static frontend
 static/frontend
+
+# Ignore temp db
+db.db

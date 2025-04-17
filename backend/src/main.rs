@@ -1,5 +1,3 @@
-use std::time;
-
 use args::ProgramArgs;
 use axum::{
     Router, ServiceExt,
@@ -8,8 +6,8 @@ use axum::{
 };
 use axum_login::AuthManagerLayerBuilder;
 use clap::Parser;
-use handlers::backend::post_login;
 use sea_orm::Database;
+use sea_orm_migration::MigratorTrait as _;
 use tokio::net;
 use tower::Layer;
 use tower_http::{
@@ -26,6 +24,7 @@ mod args;
 mod auth;
 mod db;
 mod handlers;
+mod response_bodies;
 mod states;
 
 /// The main function for he backend
@@ -117,7 +116,27 @@ async fn main() {
     };
 
     // Create a database connection
-    let database_connection = Database::connect(&database_url).await.unwrap();
+    event!(Level::INFO, "Connecting to database...");
+    let database_connection = match Database::connect(&database_url).await {
+        Ok(connection) => {
+            event!(Level::INFO, "Connected to database");
+            connection
+        }
+        Err(err) => {
+            event!(Level::ERROR, "Failed to connect to database: {}", err);
+            panic!("Failed to connect to database: {}", err);
+        }
+    };
+
+    // Migrate the database
+    event!(Level::INFO, "Migrating database...");
+    match db::migrator::Migrator::up(&database_connection, None).await {
+        Ok(_) => event!(Level::INFO, "Database migrated"),
+        Err(err) => {
+            event!(Level::ERROR, "Failed to migrate database: {}", err);
+            panic!("Failed to migrate database: {}", err);
+        }
+    };
 
     // Create the session store and layer
     let session_store = MemoryStore::default();
@@ -135,9 +154,9 @@ async fn main() {
 
     // Create the backend router
     let backend_router = Router::new()
-        .layer(auth_layer)
         .route("/ping", get(handlers::backend::get_ping))
         .route("/login", post(handlers::backend::post_login))
+        .layer(auth_layer)
         .fallback(get(handlers::backend::get_404))
         .with_state(backend_state);
 
