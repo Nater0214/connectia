@@ -145,14 +145,15 @@ async fn main() {
 
     // Create the auth backend and layer
     let auth_backend = auth::Backend::new(database_connection.clone());
-    let auth_layer = AuthManagerLayerBuilder::new(auth_backend.clone(), session_layer).build();
+    let auth_layer =
+        AuthManagerLayerBuilder::new(auth_backend.clone(), session_layer.clone()).build();
 
     // Create a super user if passed in
     if let Some(input) = program_args.create_super_user {
         let mut parts = input.split(":");
         if let Some(username) = parts.next() {
             if let Some(password) = parts.next() {
-                match auth_backend.create_user(username, password).await {
+                match auth_backend.create_user(username, password, true).await {
                     Ok(_) => event!(Level::INFO, "Super user created"),
                     Err(err) => {
                         event!(Level::ERROR, "Failed to create super user: {}", err);
@@ -172,6 +173,7 @@ async fn main() {
     let backend_router = Router::new()
         .route("/ping", get(handlers::backend::get_ping))
         .route("/login", post(handlers::backend::post_login))
+        .route("/current-user", get(handlers::backend::get_current_user))
         .layer(auth_layer)
         .fallback(get(handlers::backend::get_404))
         .with_state(backend_state);

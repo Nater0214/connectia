@@ -1,8 +1,9 @@
 use yewdux::Store;
 
 #[derive(Debug, Clone, Eq)]
-pub struct User {
+pub(super) struct User {
     pub username: String,
+    pub admin: bool,
 }
 
 impl PartialEq for User {
@@ -12,7 +13,7 @@ impl PartialEq for User {
 }
 
 #[derive(Debug, Clone, PartialEq, Store)]
-pub struct State {
+pub(super) struct State {
     pub current_user: Option<User>,
 }
 

@@ -14,6 +14,7 @@ use crate::db;
 pub struct User {
     pub id: i64,
     pub username: String,
+    pub admin: bool,
 }
 
 impl AuthUser for User {
@@ -75,7 +76,7 @@ impl Backend {
     }
 
     /// Create a user with a password
-    pub async fn create_user(&self, username: impl AsRef<str>, password: impl AsRef<str>) -> Result<(), Error> {
+    pub async fn create_user(&self, username: impl AsRef<str>, password: impl AsRef<str>, admin: bool) -> Result<(), Error> {
         // Convert args to &str
         let username = username.as_ref();
         let password = password.as_ref();
@@ -99,6 +100,7 @@ impl Backend {
             db::users::Entity::insert(db::users::ActiveModel {
                 username: Set(username.to_string()),
                 password_hash: Set(password_hash),
+                admin: Set(admin),
                 ..Default::default()
             })
             .exec(&self.db)
@@ -140,6 +142,7 @@ impl AuthnBackend for Backend {
                 Ok(Some(User {
                     id: entity.id,
                     username: entity.username,
+                    admin: entity.admin,
                 }))
             } else {
                 Ok(None)
@@ -154,6 +157,7 @@ impl AuthnBackend for Backend {
         Ok(user_entity.map(|entity| User {
             id: entity.id,
             username: entity.username,
+            admin: entity.admin,
         }))
     }
 }

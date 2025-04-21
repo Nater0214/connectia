@@ -12,5 +12,6 @@ wasm-logger = "0.2.0"
 web-sys = { version = "0.3.77", features = ["HtmlInputElement", "FormData", "HtmlFormElement"] }
 yew = { version = "0.21.0", features = ["csr"] }
 yew-autoprops = "0.4.1"
+yew-hooks = "0.3.3"
 yew-router = "0.18.0"
 yewdux = "0.11.0"

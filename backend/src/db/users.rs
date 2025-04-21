@@ -13,6 +13,7 @@ pub struct Model {
     pub id: i64,
     pub username: String,
     pub password_hash: String,
+    pub admin: bool,
 }
 
 #[derive(Debug, Clone, Copy, EnumIter, DeriveRelation)]
@@ -45,6 +46,7 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(Column::Username).string().not_null())
                     .col(ColumnDef::new(Column::PasswordHash).string().not_null())
+                    .col(ColumnDef::new(Column::Admin).boolean().not_null())
                     .to_owned(),
             )
             .await

@@ -1,11 +1,14 @@
+use axum_login::AuthSession;
+
 use axum::{
+    Json,
     extract::State,
     http,
     response::{Html, IntoResponse},
 };
 use tokio::{fs, io};
 
-use crate::states::RootState;
+use crate::{auth, response_bodies, states::RootState};
 
 /// A response error
 #[derive(Debug)]
@@ -50,11 +53,6 @@ pub async fn get_index(State(state): State<RootState>) -> Result<impl IntoRespon
 }
 
 pub mod backend {
-    use axum::Json;
-    use axum_login::AuthSession;
-
-    use crate::{auth, response_bodies};
-
     use super::*;
 
     pub async fn get_ping() -> impl IntoResponse {
@@ -72,14 +70,30 @@ pub mod backend {
                     Json(response_bodies::LoginResponse {
                         username: user.username,
                     }),
-                ).into_response(),
-                Err(err) => (
-                    http::StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("{}", err),
-                ).into_response()
+                )
+                    .into_response(),
+                Err(err) => {
+                    (http::StatusCode::INTERNAL_SERVER_ERROR, format!("{}", err)).into_response()
+                }
             },
             Ok(None) => (http::StatusCode::UNAUTHORIZED, "Unauthorized").into_response(),
-            Err(err) => (http::StatusCode::INTERNAL_SERVER_ERROR, format!("{}", err)).into_response(),
+            Err(err) => {
+                (http::StatusCode::INTERNAL_SERVER_ERROR, format!("{}", err)).into_response()
+            }
+        }
+    }
+
+    pub async fn get_current_user(auth_session: AuthSession<auth::Backend>) -> impl IntoResponse {
+        match auth_session.user {
+            Some(user) => (
+                http::StatusCode::OK,
+                Json(response_bodies::MeResponse {
+                    username: user.username,
+                    admin: user.admin,
+                }),
+            )
+                .into_response(),
+            None => (http::StatusCode::UNAUTHORIZED, "Unauthorized").into_response(),
         }
     }
 
