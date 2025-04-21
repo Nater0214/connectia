@@ -7,6 +7,7 @@ edition = "2024"
 gloo-net = "0.6.0"
 serde = "1.0.219"
 serde_json = "1.0.140"
+urlencoding = "2.1.3"
 wasm-bindgen-futures = "0.4.50"
 wasm-logger = "0.2.0"
 web-sys = { version = "0.3.77", features = ["HtmlInputElement", "FormData", "HtmlFormElement"] }

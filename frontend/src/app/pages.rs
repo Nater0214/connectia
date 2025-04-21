@@ -1,22 +1,38 @@
 use std::rc::Rc;
 
-use yew::{AttrValue, Html, classes, function_component, html, use_effect_with};
+use yew::{Html, classes, function_component, html, use_effect_with};
 use yew_autoprops::autoprops;
 use yew_hooks::{use_async, use_effect_once};
-use yew_router::hooks::use_navigator;
+use yew_router::hooks::{use_location, use_navigator};
 
-use super::{Route, Title, forms::*, utils::get_current_user};
+use super::{Route, Title, forms::*, queries::*, utils::get_current_user};
 
 #[autoprops]
 #[function_component]
 pub(super) fn ErrorPage(
-    #[prop_or_default] error_num: u16,
-    #[prop_or(AttrValue::Static("error"))] error_message: &AttrValue,
+    #[prop_or_default] error_num: &Option<u16>,
+    #[prop_or_default] error_message: &Option<String>,
 ) -> Html {
     html! {
         <>
-            <Title>{ error_num }</Title>
-            <h2>{ error_message }</h2>
+            {
+                if let Some(error_num) = error_num {
+                    html! {
+                        <Title>{ error_num }</Title>
+                    }
+                } else {
+                    html! {}
+                }
+            }
+            {
+                if let Some(error_message) = error_message {
+                    html! {
+                        <p>{ error_message }</p>
+                    }
+                } else {
+                    html! {}
+                }
+            }
         </>
     }
 }
@@ -32,10 +48,21 @@ pub(super) fn LandingPage() -> Html {
 
 #[function_component]
 pub(super) fn LoginPage() -> Html {
+    // Use stuff
+    let location = use_location();
+
+    // Attempt to parse the next url
+    let next = location.and_then(|location| {
+        location
+            .query::<LoginQuery>()
+            .ok()
+            .and_then(|query| query.next)
+    });
+
     html! {
         <>
             <Title>{ "Login" }</Title>
-            <LoginForm />
+            <LoginForm next={ next } />
         </>
     }
 }
@@ -62,7 +89,13 @@ pub(super) fn AdminPage() -> Html {
         use_effect_with(user_fetch, move |user_fetch| {
             if let Some(data) = &user_fetch.data {
                 if data.is_none() {
-                    navigator.push(&Route::Login);
+                    let navigation_result = navigator.push_with_query(
+                        &Route::Login,
+                        &LoginQuery {
+                            next: Some(Route::Admin),
+                        },
+                    );
+                    if let Err(_err) = navigation_result {}
                 }
             }
             || ()

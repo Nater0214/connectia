@@ -1,10 +1,12 @@
 use pages::*;
+use serde::{Deserialize, Serialize};
 use yew::{Html, classes, function_component, html};
 use yew_autoprops::autoprops;
 use yew_router::{BrowserRouter, Routable, Switch};
 
 pub(self) mod forms;
 pub(self) mod pages;
+pub(self) mod queries;
 pub(self) mod state;
 pub(self) mod utils;
 
@@ -16,7 +18,7 @@ pub(self) fn Title(#[prop_or_default] children: &Html) -> Html {
     }
 }
 
-#[derive(Debug, Clone, Routable, PartialEq)]
+#[derive(Debug, Clone, Routable, PartialEq, Serialize, Deserialize)]
 pub(self) enum Route {
     #[at("/")]
     Landing,

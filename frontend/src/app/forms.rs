@@ -5,15 +5,21 @@ use yew::{
     Callback, Html, InputEvent, SubmitEvent, TargetCast as _, classes, function_component, html,
     use_state,
 };
+use yew_autoprops::autoprops;
+use yew_router::hooks::use_navigator;
+
+use super::Route;
 
 use crate::net::bodies;
 
+#[autoprops]
 #[function_component]
-pub(super) fn LoginForm() -> Html {
+pub(super) fn LoginForm(#[prop_or_default] next: &Option<Route>) -> Html {
     // Use stuff
     let username_state = use_state(String::new);
     let password_state = use_state(String::new);
     let error_state = use_state(|| None::<String>);
+    let navigator = use_navigator().expect("Navigator not found");
 
     // Create the username input handler
     let handle_username_input = {
@@ -39,6 +45,8 @@ pub(super) fn LoginForm() -> Html {
         let username = (*username_state).clone();
         let password = (*password_state).clone();
         let error_state = error_state.clone();
+        let navigator = navigator.clone();
+        let next = next.clone();
 
         // Create the callback
         Callback::from(move |e: SubmitEvent| {
@@ -51,6 +59,8 @@ pub(super) fn LoginForm() -> Html {
                 password: password.clone(),
             };
             let error_state = error_state.clone();
+            let navigator = navigator.clone();
+            let next = next.clone();
 
             // Spawn the task
             spawn_local(async move {
@@ -86,7 +96,14 @@ pub(super) fn LoginForm() -> Html {
 
                 // Do an action based on the response status
                 match response.status() {
-                    200 => {}
+                    200 => {
+                        error_state.set(None);
+                        if let Some(route) = next {
+                            navigator.push(&route);
+                        } else {
+                            navigator.push(&Route::Admin);
+                        }
+                    }
                     401 => {
                         error_state.set(Some("Invalid credentials".to_string()));
                     }

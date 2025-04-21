@@ -575,6 +575,7 @@ dependencies = [
  "gloo-net 0.6.0",
  "serde",
  "serde_json",
+ "urlencoding",
  "wasm-bindgen-futures",
  "wasm-logger",
  "web-sys",
