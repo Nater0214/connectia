@@ -10,20 +10,14 @@ pub(self) mod queries;
 pub(self) mod state;
 pub(self) mod utils;
 
-#[autoprops]
-#[function_component]
-pub(self) fn Title(#[prop_or_default] children: &Html) -> Html {
-    html! {
-        <h1 class={ classes!("text-7xl", "text-center") }>{ children.clone() }</h1>
-    }
-}
-
 #[derive(Debug, Clone, Routable, PartialEq, Serialize, Deserialize)]
 pub(self) enum Route {
     #[at("/")]
     Landing,
     #[at("/login")]
     Login,
+    #[at("/logout")]
+    Logout,
     #[at("/admin")]
     Admin,
     #[not_found]
@@ -38,6 +32,9 @@ fn switch(route: Route) -> Html {
         },
         Route::Login => html! {
             <LoginPage />
+        },
+        Route::Logout => html! {
+            <LogoutPage />
         },
         Route::Admin => html! {
             <AdminPage />

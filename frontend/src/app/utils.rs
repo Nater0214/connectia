@@ -1,4 +1,9 @@
+use std::rc::Rc;
+
 use gloo_net::http::Request;
+use yew::{Html, classes, function_component, html};
+use yew_autoprops::autoprops;
+use yew_hooks::UseAsyncHandle;
 
 use crate::net::responses;
 
@@ -67,5 +72,13 @@ pub(super) async fn get_current_user() -> Result<Option<state::User>, GetCurrent
             "Unexpected status code: {}",
             code
         ))),
+    }
+}
+
+#[autoprops]
+#[function_component]
+pub(super) fn Title(#[prop_or_default] children: &Html) -> Html {
+    html! {
+        <h1 class={ classes!("text-7xl", "text-center") }>{ children.clone() }</h1>
     }
 }

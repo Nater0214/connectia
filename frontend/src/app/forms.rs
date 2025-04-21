@@ -101,7 +101,7 @@ pub(super) fn LoginForm(#[prop_or_default] next: &Option<Route>) -> Html {
                         if let Some(route) = next {
                             navigator.push(&route);
                         } else {
-                            navigator.push(&Route::Admin);
+                            navigator.push(&Route::Landing);
                         }
                     }
                     401 => {

@@ -83,6 +83,18 @@ pub mod backend {
         }
     }
 
+    pub async fn post_logout(mut auth_session: AuthSession<auth::Backend>) -> impl IntoResponse {
+        match auth_session.user {
+            Some(_) => {
+                match auth_session.logout().await {
+                    Ok(_) => (http::StatusCode::OK, "OK").into_response(),
+                    Err(err) => (http::StatusCode::INTERNAL_SERVER_ERROR, format!("{}", err)).into_response()
+                }
+            },
+            None => (http::StatusCode::UNAUTHORIZED, "Unauthorized").into_response(),
+        }
+    }
+
     pub async fn get_current_user(auth_session: AuthSession<auth::Backend>) -> impl IntoResponse {
         match auth_session.user {
             Some(user) => (

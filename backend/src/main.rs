@@ -173,6 +173,7 @@ async fn main() {
     let backend_router = Router::new()
         .route("/ping", get(handlers::backend::get_ping))
         .route("/login", post(handlers::backend::post_login))
+        .route("/logout", post(handlers::backend::post_logout))
         .route("/current-user", get(handlers::backend::get_current_user))
         .layer(auth_layer)
         .fallback(get(handlers::backend::get_404))
