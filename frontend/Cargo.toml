@@ -14,4 +14,3 @@ yew = { version = "0.21.0", features = ["csr"] }
 yew-autoprops = "0.4.1"
 yew-router = "0.18.0"
 yewdux = "0.11.0"
-

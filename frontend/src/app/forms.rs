@@ -2,47 +2,17 @@ use gloo_net::http::Request;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::{
-    AttrValue, Callback, Html, InputEvent, SubmitEvent, TargetCast as _, classes,
-    function_component, html, use_state,
+    classes, function_component, html, use_state, Callback, Html, InputEvent, SubmitEvent, TargetCast as _
 };
-use yew_autoprops::autoprops;
-use yew_router::{BrowserRouter, Routable, Switch};
-use yewdux::{Store, use_store};
+use yewdux::use_store;
 
-use crate::{bodies, responses};
-
-#[derive(Debug, Clone, Eq)]
-struct User {
-    username: String,
-}
-
-impl PartialEq for User {
-    fn eq(&self, other: &Self) -> bool {
-        self.username == other.username
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Store)]
-struct State {
-    current_user: Option<User>,
-}
-
-impl Default for State {
-    fn default() -> Self {
-        Self { current_user: None }
-    }
-}
-
-#[autoprops]
-#[function_component]
-fn Title(#[prop_or_default] children: &Html) -> Html {
-    html! {
-        <h1 class={ classes!("text-7xl", "text-center") }>{ children.clone() }</h1>
-    }
-}
+use crate::{
+    app::state::{State, User},
+    net::{bodies, responses},
+};
 
 #[function_component]
-fn LoginForm() -> Html {
+pub fn LoginForm() -> Html {
     // Create states
     let username_state = use_state(String::new);
     let password_state = use_state(String::new);
@@ -201,70 +171,5 @@ fn LoginForm() -> Html {
                 disabled={ (*store).current_user.is_some() }
             />
         </form>
-    }
-}
-
-#[autoprops]
-#[function_component]
-fn ErrorPage(
-    #[prop_or_default] error_num: u16,
-    #[prop_or(AttrValue::Static("error"))] error_message: &AttrValue,
-) -> Html {
-    html! {
-        <>
-            <Title>{ error_num }</Title>
-            <h2>{ error_message }</h2>
-        </>
-    }
-}
-
-#[function_component]
-fn LandingPage() -> Html {
-    html! {
-        <Title>{ "Home" }</Title>
-    }
-}
-
-#[function_component]
-fn LoginPage() -> Html {
-    html! {
-        <>
-            <Title>{ "Login" }</Title>
-            <LoginForm />
-        </>
-    }
-}
-
-#[derive(Debug, Clone, Routable, PartialEq)]
-enum Route {
-    #[at("/")]
-    Landing,
-    #[at("/login")]
-    Login,
-    #[not_found]
-    #[at("/404")]
-    NotFound,
-}
-
-fn switch(route: Route) -> Html {
-    match route {
-        Route::Landing => html! {
-            <LandingPage />
-        },
-        Route::Login => html! {
-            <LoginPage />
-        },
-        Route::NotFound => html! {
-            <ErrorPage error_num={ 404 } error_message={ "Page not found" } />
-        },
-    }
-}
-
-#[function_component]
-pub fn App() -> Html {
-    html! {
-        <BrowserRouter>
-            <Switch<Route> render={switch} />
-        </BrowserRouter>
     }
 }
