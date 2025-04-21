@@ -6,7 +6,7 @@ target
 .VSCodeCounter
 
 # Ignore compiled static frontend
-static/frontend
+static/frontend/
 static/styles/app.css
 
 # Ignore temp db

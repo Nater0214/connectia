@@ -1,9 +1,6 @@
-use std::rc::Rc;
-
 use gloo_net::http::Request;
 use yew::{Html, classes, function_component, html};
 use yew_autoprops::autoprops;
-use yew_hooks::UseAsyncHandle;
 
 use crate::net::responses;
 

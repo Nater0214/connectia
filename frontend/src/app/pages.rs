@@ -191,7 +191,7 @@ pub(super) fn LogoutPage() -> Html {
                         <p>{ format!("Error fetching the current user: {}", err.to_string()) }</p>
                     }
                 } else if let Some(data) = &user_fetch.data {
-                    if let Some(user) = data {
+                    if let Some(_user) = data {
                         html! {
                             <button class={ classes!("px-3", "py-2", "rounded", "border-3", "border-gray-300", "bg-amber-200", "active:bg-amber-300", "cursor-pointer") } onclick={ on_click }>{ "Logout" }</button>
                         }

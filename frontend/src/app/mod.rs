@@ -1,7 +1,6 @@
 use pages::*;
 use serde::{Deserialize, Serialize};
-use yew::{Html, classes, function_component, html};
-use yew_autoprops::autoprops;
+use yew::{Html, function_component, html};
 use yew_router::{BrowserRouter, Routable, Switch};
 
 pub(self) mod forms;
