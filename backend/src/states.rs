@@ -1,13 +1,16 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-use sea_orm::DatabaseConnection;
-
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct RootState {
     pub static_dir: PathBuf,
+    pub reqwest_client: reqwest::Client,
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct BackendState {
-    pub db_connection: DatabaseConnection,
+impl RootState {
+    pub fn new(static_dir: impl AsRef<Path>) -> RootState {
+        RootState {
+            static_dir: static_dir.as_ref().to_owned(),
+            reqwest_client: reqwest::Client::new(),
+        }
+    }
 }
