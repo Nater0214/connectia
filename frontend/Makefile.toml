@@ -1,11 +1,3 @@
-[tasks.build-trunk]
+[tasks.build]
 command = "trunk"
 args = ["build", "--public-url", "/static/frontend"]
-
-[tasks.build-tailwindcss]
-command = "npx"
-args = ["--yes", "tailwindcss", "-i", "./styles/app.css", "-o", "../static/styles/app.css"]
-
-[tasks.build]
-# disabled = true
-dependencies = ["build-trunk", "build-tailwindcss"]

@@ -2,3 +2,8 @@
 locked = false
 dist = "../static/frontend"
 filehash = false
+
+[[hooks]]
+stage = "build"
+command = "npx"
+command_arguments = ["tailwindcss", "-i", "./styles/app.css",  "-o", "../static/styles/app.css"]

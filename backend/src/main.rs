@@ -1,30 +1,18 @@
 use args::ProgramArgs;
-use axum::{
-    Router, ServiceExt,
-    extract::Request,
-    routing::{get, post},
-};
-use axum_login::AuthManagerLayerBuilder;
+use axum::{Router, routing::get};
 use clap::Parser;
-use sea_orm::Database;
-use sea_orm_migration::MigratorTrait as _;
+use handlers::get_index;
 use tokio::net;
-use tower::Layer;
 use tower_http::{
     LatencyUnit,
-    normalize_path::NormalizePathLayer,
     services::ServeDir,
     trace::{DefaultOnFailure, DefaultOnRequest, DefaultOnResponse, TraceLayer},
 };
-use tower_sessions::{MemoryStore, SessionManagerLayer, cookie::time::Duration};
 use tracing::{Level, event, level_filters::LevelFilter};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt as _};
 
 mod args;
-mod auth;
-mod db;
 mod handlers;
-mod response_bodies;
 mod states;
 
 /// The main function for he backend
@@ -100,97 +88,14 @@ async fn main() {
         }
     };
 
-    // Get the database url from the command like arguments
-    let database_url = match program_args.database_url {
-        Some(url) => {
-            event!(Level::INFO, "Setting database URL to {}", url);
-            url
-        }
-        None => {
-            event!(
-                Level::INFO,
-                "No database URL provided, defaulting to sqlite::memory:"
-            );
-            "sqlite::memory:".to_string()
-        }
-    };
-
-    // Create a database connection
-    event!(Level::INFO, "Connecting to database...");
-    let database_connection = match Database::connect(&database_url).await {
-        Ok(connection) => {
-            event!(Level::INFO, "Connected to database");
-            connection
-        }
-        Err(err) => {
-            event!(Level::ERROR, "Failed to connect to database: {}", err);
-            panic!("Failed to connect to database: {}", err);
-        }
-    };
-
-    // Migrate the database
-    event!(Level::INFO, "Migrating database...");
-    match db::migrator::Migrator::up(&database_connection, None).await {
-        Ok(_) => event!(Level::INFO, "Database migrated"),
-        Err(err) => {
-            event!(Level::ERROR, "Failed to migrate database: {}", err);
-            panic!("Failed to migrate database: {}", err);
-        }
-    };
-
-    // Create the session store and layer
-    let session_store = MemoryStore::default();
-    let session_layer = SessionManagerLayer::new(session_store)
-        .with_expiry(tower_sessions::Expiry::OnInactivity(Duration::days(1)));
-
-    // Create the auth backend and layer
-    let auth_backend = auth::Backend::new(database_connection.clone());
-    let auth_layer =
-        AuthManagerLayerBuilder::new(auth_backend.clone(), session_layer.clone()).build();
-
-    // Create a super user if passed in
-    if let Some(input) = program_args.create_super_user {
-        let mut parts = input.split(":");
-        if let Some(username) = parts.next() {
-            if let Some(password) = parts.next() {
-                match auth_backend.create_user(username, password, true).await {
-                    Ok(_) => event!(Level::INFO, "Super user created"),
-                    Err(err) => {
-                        event!(Level::ERROR, "Failed to create super user: {}", err);
-                        panic!("Failed to create super user: {}", err);
-                    }
-                }
-            }
-        }
-    }
-
-    // Create the backend state
-    let backend_state = states::BackendState {
-        db_connection: database_connection.clone(),
-    };
-
-    // Create the backend router
-    let backend_router = Router::new()
-        .route("/ping", get(handlers::backend::get_ping))
-        .route("/login", post(handlers::backend::post_login))
-        .route("/logout", post(handlers::backend::post_logout))
-        .route("/current-user", get(handlers::backend::get_current_user))
-        .layer(auth_layer)
-        .fallback(get(handlers::backend::get_404))
-        .with_state(backend_state);
-
     // Create the root state
-    let root_state = states::RootState {
-        static_dir: static_dir.clone(),
-        ..states::RootState::default()
-    };
+    let root_state = states::RootState::new(&static_dir);
 
     // Create the root router
     let root_router = Router::new()
         .route("/", get(handlers::get_index))
+        .fallback(get_index)
         .nest_service("/static", ServeDir::new(&static_dir))
-        .nest("/backend", backend_router)
-        .fallback(get(handlers::get_index))
         .layer(
             TraceLayer::new_for_http()
                 .on_request(DefaultOnRequest::new().level(Level::INFO))
@@ -202,9 +107,6 @@ async fn main() {
                 ),
         )
         .with_state(root_state);
-
-    // Create the app
-    let app = NormalizePathLayer::trim_trailing_slash().layer(root_router);
 
     // Create the listener
     let listener = match net::TcpListener::bind(format!("0.0.0.0:{}", port)).await {
@@ -219,7 +121,7 @@ async fn main() {
     };
 
     // Serve the root router
-    match axum::serve(listener, ServiceExt::<Request>::into_make_service(app)).await {
+    match axum::serve(listener, root_router).await {
         Ok(_) => event!(Level::INFO, "Finished serving on port {}", port),
         Err(err) => event!(Level::ERROR, "Failed to serve: {}", err),
     };

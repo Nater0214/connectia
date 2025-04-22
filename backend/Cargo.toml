@@ -4,20 +4,12 @@ version = "0.0.0"
 edition = "2024"
 
 [dependencies]
-argon2 = { version = "0.5.3", features = ["std"] }
-async-trait = "0.1.88"
 axum = "0.8.1"
-axum-login = "0.17.0"
 axum-reverse-proxy = "0.8.0"
 clap = { version = "4.5.34", features = ["derive"] }
 reqwest = "0.12.15"
-sea-orm = { version = "1.1.8", features = ["macros", "runtime-tokio-rustls", "sqlx-mysql", "sqlx-postgres", "sqlx-sqlite"] }
-sea-orm-migration = { version = "1.1.10", features = ["runtime-tokio-rustls", "sqlx-mysql", "sqlx-postgres", "sqlx-sqlite"] }
-secrecy = { version = "0.10.3", features = ["serde"] }
-serde = "1.0.219"
-tokio = { version = "1.44.2", features = ["macros", "net", "rt-multi-thread"] }
+tokio = { version = "1.44.1", features = ["macros", "net", "rt-multi-thread"] }
 tower = "0.5.2"
-tower-http = { version = "0.6.2", features = ["fs", "normalize-path", "tokio", "trace"] }
-tower-sessions = "0.14.0"
+tower-http = { version = "0.6.2", features = ["fs", "tokio", "trace"] }
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
