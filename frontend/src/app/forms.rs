@@ -1,0 +1,296 @@
+use gloo_net::http::Request;
+use wasm_bindgen_futures::spawn_local;
+use web_sys::HtmlInputElement;
+use yew::{
+    Callback, Html, InputEvent, SubmitEvent, TargetCast as _, classes, function_component, html,
+    use_state,
+};
+use yew_autoprops::autoprops;
+use yew_router::hooks::use_navigator;
+
+use super::Route;
+
+use crate::net::bodies;
+
+#[autoprops]
+#[function_component]
+pub(super) fn LoginForm(#[prop_or_default] next: &Option<Route>) -> Html {
+    // Use stuff
+    let username_state = use_state(String::new);
+    let password_state = use_state(String::new);
+    let error_state = use_state(|| None::<String>);
+    let navigator = use_navigator().expect("Navigator not found");
+
+    // Create the username input handler
+    let handle_username_input = {
+        let username_state = username_state.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_dyn_into().unwrap();
+            username_state.set(input.value());
+        })
+    };
+
+    // Create the password input handler
+    let handle_password_input = {
+        let password_state = password_state.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_dyn_into().unwrap();
+            password_state.set(input.value());
+        })
+    };
+
+    // Create the onsubmit handler
+    let on_submit = {
+        // Clone stuff
+        let username = (*username_state).clone();
+        let password = (*password_state).clone();
+        let error_state = error_state.clone();
+        let navigator = navigator.clone();
+        let next = next.clone();
+
+        // Create the callback
+        Callback::from(move |e: SubmitEvent| {
+            // Prevent browser default form submission
+            e.prevent_default();
+
+            // Clone stuff
+            let credentials = bodies::LoginBody {
+                username: username.clone(),
+                password: password.clone(),
+            };
+            let error_state = error_state.clone();
+            let navigator = navigator.clone();
+            let next = next.clone();
+
+            // Spawn the task
+            spawn_local(async move {
+                // Serialize the credentials to json
+                let credentials = match serde_json::to_string(&credentials) {
+                    Ok(credentials) => credentials,
+                    Err(error) => {
+                        error_state.set(Some(error.to_string()));
+                        return;
+                    }
+                };
+
+                // Create a new request
+                let request = match Request::post("/backend/login")
+                    .header("Content-Type", "application/json")
+                    .body(credentials)
+                {
+                    Ok(request) => request,
+                    Err(_) => {
+                        error_state.set(Some("Internal frontend error".to_string()));
+                        return;
+                    }
+                };
+
+                // Send the request and get a response
+                let response = match request.send().await {
+                    Ok(response) => response,
+                    Err(_) => {
+                        error_state.set(Some("Internal frontend error".to_string()));
+                        return;
+                    }
+                };
+
+                // Do an action based on the response status
+                match response.status() {
+                    200 => {
+                        error_state.set(None);
+                        if let Some(route) = next {
+                            navigator.push(&route);
+                        } else {
+                            navigator.push(&Route::Landing);
+                        }
+                    }
+                    401 => {
+                        error_state.set(Some("Invalid credentials".to_string()));
+                    }
+                    500 => {
+                        error_state.set(Some("Internal server error".to_string()));
+                    }
+                    _ => {
+                        error_state.set(Some("Internal frontend error".to_string()));
+                    }
+                }
+            });
+        })
+    };
+
+    // Return html for the form
+    html! {
+        <form onsubmit={ on_submit } novalidate=true>
+            <div class={ classes!("mb-5") }>
+                <label for="username">{ "Username:" }</label>
+                <input
+                    id="username"
+                    class={ classes!("w-full", "mb-5", "px-3", "py-2", "rounded", "border-3", "border-gray-300", "bg-amber-200") }
+                    type="text"
+                    value={ (*username_state).clone() }
+                    oninput={ handle_username_input }
+                />
+            </div>
+            <div class={ classes!("mb-5") }>
+                <label for="password">{ "Password:" }</label>
+                <input
+                    id="password"
+                    class={ classes!("w-full", "mb-5", "px-3", "py-2", "rounded", "border-3", "border-gray-300", "bg-amber-200") }
+                    type="password"
+                    value={ (*password_state).clone() }
+                    oninput={ handle_password_input }
+                />
+            </div>
+            {
+                if let Some(error) = &*error_state {
+                    html! {
+                        <p class={ classes!("text-red-500") }>{ error }</p>
+                    }
+                } else {
+                    html! {}
+                }
+            }
+            <input
+                type="submit"
+                value="Login"
+                class={ classes!("mb-5", "px-3", "py-2", "rounded", "border-3", "border-gray-300", "bg-amber-200", "active:bg-amber-300", "cursor-pointer") }
+            />
+        </form>
+    }
+}
+
+#[function_component]
+pub(super) fn CreateUserForm() -> Html {
+    // Use stuff
+    let username_state = use_state(String::new);
+    let password_state = use_state(String::new);
+    let error_state = use_state(|| None::<String>);
+
+    // Create the username input handler
+    let handle_username_input = {
+        let username_state = username_state.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_dyn_into().unwrap();
+            username_state.set(input.value());
+        })
+    };
+
+    // Create the password input handler
+    let handle_password_input = {
+        let password_state = password_state.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_dyn_into().unwrap();
+            password_state.set(input.value());
+        })
+    };
+
+    // Create the on submit handler
+    let on_submit = {
+        // Clone stuff
+        let username = (*username_state).clone();
+        let password = (*password_state).clone();
+        let error_state = error_state.clone();
+
+        // Create the callback
+        Callback::from(move |e: SubmitEvent| {
+            // Prevent the browser default form submission
+            e.prevent_default();
+
+            // Clone stuff
+            let credentials = bodies::LoginBody {
+                username: username.clone(),
+                password: password.clone(),
+            };
+            let error_state = error_state.clone();
+
+            // Spawn the task
+            spawn_local(async move {
+                // Serialize the credentials to json
+                let credentials = match serde_json::to_string(&credentials) {
+                    Ok(credentials) => credentials,
+                    Err(error) => {
+                        error_state.set(Some(error.to_string()));
+                        return;
+                    }
+                };
+
+                // Create a new request
+                let request = match Request::post("/backend/create_user")
+                    .header("Content-Type", "application/json")
+                    .body(credentials)
+                {
+                    Ok(request) => request,
+                    Err(_) => {
+                        error_state.set(Some("Internal frontend error".to_string()));
+                        return;
+                    }
+                };
+
+                // Send the request and get a response
+                let response = match request.send().await {
+                    Ok(response) => response,
+                    Err(_) => {
+                        error_state.set(Some("Internal frontend error".to_string()));
+                        return;
+                    }
+                };
+
+                // If the response isn't ok then error
+                if !response.ok() {
+                    match response.status() {
+                        401 => {
+                            error_state.set(Some("Invalid credentials".to_string()));
+                        }
+                        500 => {
+                            error_state.set(Some("Internal server error".to_string()));
+                        }
+                        _ => {
+                            error_state.set(Some("Internal frontend error".to_string()));
+                        }
+                    }
+                    return;
+                }
+            });
+        })
+    };
+
+    // Return html for the form
+    html! {
+        <form onsubmit={ on_submit } novalidate=true>
+            <div class={ classes!("mb-5") }>
+                <label for="username">{ "Username:" }</label>
+                <input
+                    id="username"
+                    class={ classes!("w-full", "mb-5", "px-3", "py-2", "rounded", "border-3", "border-gray-300", "bg-amber-200") }
+                    type="text"
+                    value={ (*username_state).clone() }
+                    oninput={ handle_username_input }
+                />
+            </div>
+            <div class={ classes!("mb-5") }>
+                <label for="password">{ "Password:" }</label>
+                <input
+                    id="password"
+                    class={ classes!("w-full", "mb-5", "px-3", "py-2", "rounded", "border-3", "border-gray-300", "bg-amber-200") }
+                    type="password"
+                    value={ (*password_state).clone() }
+                    oninput={ handle_password_input }
+                />
+            </div>
+            {
+                if let Some(error) = &*error_state {
+                    html! {
+                        <p class={ classes!("text-red-500") }>{ error }</p>
+                    }
+                } else {
+                    html! {}
+                }
+            }
+            <input
+                type="submit"
+                value="Create User"
+                class={ classes!("mb-5", "px-3", "py-2", "rounded", "border-3", "border-gray-300", "bg-amber-200", "active:bg-amber-300", "cursor-pointer") }
+            />
+        </form>
+    }
+}

@@ -4,4 +4,4 @@ args = ["build"]
 
 [tasks.run]
 command = "cargo"
-args = ["run"]
+args = ["run", "--"]
