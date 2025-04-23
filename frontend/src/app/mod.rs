@@ -1,11 +1,10 @@
-use pages::*;
+use pages::{AdminPage, ErrorPage, LandingPage, LoginPage, LogoutPage};
 use serde::{Deserialize, Serialize};
 use yew::{Html, function_component, html};
 use yew_router::{BrowserRouter, Routable, Switch};
 
-pub(self) mod forms;
+pub(self) mod components;
 pub(self) mod pages;
-pub(self) mod queries;
 pub(self) mod state;
 pub(self) mod utils;
 
